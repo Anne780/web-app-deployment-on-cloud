@@ -3,46 +3,46 @@ name: Track Git Activity
 on:
   push:
 
+permissions:
+  contents: read
+
 jobs:
-  track:
+  track-activity:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout full repo
+      - name: Checkout repo (with submodules)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Capture commit details
+      - name: Print commit metadata
         run: |
-          mkdir -p git_activities
+          echo "===== COMMIT DETAILS ====="
+          echo "Commit ID: $GITHUB_SHA"
+          echo "Message: ${{ github.event.head_commit.message }}"
+          echo "Author: ${{ github.actor }}"
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Time: $(date)"
+          echo ""
 
-          echo "Commit ID: $GITHUB_SHA" > git_activities/activity.txt
-          echo "Message: ${{ github.event.head_commit.message }}" >> git_activities/activity.txt
-          echo "Author: ${{ github.actor }}" >> git_activities/activity.txt
-          echo "Repo: $GITHUB_REPOSITORY" >> git_activities/activity.txt
-          echo "Time: $(date)" >> git_activities/activity.txt
-
-          echo "" >> git_activities/activity.txt
-          echo "Changed Files (ROOT REPO):" >> git_activities/activity.txt
-
-          git show --name-status --pretty="" $GITHUB_SHA >> git_activities/activity.txt
-
-      - name: Capture submodule changes
+      - name: Show changed files (root repo)
         run: |
-          echo "" >> git_activities/activity.txt
-          echo "Submodule Changes:" >> git_activities/activity.txt
+          echo "===== ROOT REPO CHANGES ====="
+          git show --name-status --pretty="" $GITHUB_SHA
+          echo ""
 
+      - name: Show submodule changes
+        run: |
+          echo "===== SUBMODULE CHANGES ====="
           git submodule foreach '
-            echo "Submodule: $name" >> ../git_activities/activity.txt
-            git log -1 --name-status --pretty="" >> ../git_activities/activity.txt
+            echo "Submodule: $name"
+            git log -1 --name-status --pretty=""
+            echo ""
           '
 
-      - name: Commit logs
+      - name: Summary
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add git_activities/activity.txt
-          git commit -m "Update git activity log" || echo "No changes"
-          git push
+          echo "✅ Git activity tracking completed successfully"
