@@ -1,0 +1,48 @@
+name: Track Git Activity
+
+on:
+  push:
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Capture commit details
+        run: |
+          mkdir -p git_activities
+
+          echo "Commit ID: $GITHUB_SHA" > git_activities/activity.txt
+          echo "Message: ${{ github.event.head_commit.message }}" >> git_activities/activity.txt
+          echo "Author: ${{ github.actor }}" >> git_activities/activity.txt
+          echo "Repo: $GITHUB_REPOSITORY" >> git_activities/activity.txt
+          echo "Time: $(date)" >> git_activities/activity.txt
+
+          echo "" >> git_activities/activity.txt
+          echo "Changed Files (ROOT REPO):" >> git_activities/activity.txt
+
+          git show --name-status --pretty="" $GITHUB_SHA >> git_activities/activity.txt
+
+      - name: Capture submodule changes
+        run: |
+          echo "" >> git_activities/activity.txt
+          echo "Submodule Changes:" >> git_activities/activity.txt
+
+          git submodule foreach '
+            echo "Submodule: $name" >> ../git_activities/activity.txt
+            git log -1 --name-status --pretty="" >> ../git_activities/activity.txt
+          '
+
+      - name: Commit logs
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add git_activities/activity.txt
+          git commit -m "Update git activity log" || echo "No changes"
+          git push
