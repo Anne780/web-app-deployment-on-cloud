@@ -1,0 +1,17 @@
+#!/bin/bash
+
+mkdir -p git_activities
+
+commit_id=$(git rev-parse HEAD)
+commit_msg=$(git log -1 --pretty=%B)
+repo_url=$(git config --get remote.origin.url)
+timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+
+file="git_activities/commit_$timestamp.txt"
+
+echo "Commit ID: $commit_id" >> $file
+echo "Message: $commit_msg" >> $file
+echo "Repo: $repo_url" >> $file
+echo "Time: $(date)" >> $file
+
+echo "✅ Commit logged in $file"
